@@ -1,0 +1,9 @@
+ipykernel<=6.30
+jupyter<=1.2
+notebook<=7.5
+numba<=0.62
+numpy<=2.2.0
+opencv-python<=4.11.1
+pip<=26
+scikit-learn<=1.7
+tensorflow<=2.21.0
