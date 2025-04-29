@@ -48,6 +48,12 @@ def precomputed_sin_lut(size, strength):
     )
 
 
+def precomputed_cos_lut(size, strength):
+    return (strength * np.cos(np.linspace(0, 2 * np.pi, size, endpoint=False))).astype(
+        np.float32
+    )
+
+
 def warp_image(image, background_color, warp_strength=25, axis="x", lut=None):
     height, width, _ = image.shape
     x, y = np.meshgrid(
@@ -133,6 +139,94 @@ def generate_shape_image(shape, size=(400, 400)):
             np.int32,
         )
         cv2.polylines(canvas, [points], isClosed=True, color=shape_color, thickness=4)
+    elif shape == "pentagon":
+        num_sides = 5
+        side = int((min(size) // 3) * scale)
+        r = side
+
+        offset_x = random.randint(r + buffer, max_x - r)
+        offset_y = random.randint(r + buffer, max_y - r)
+
+        sin_lut = precomputed_sin_lut(num_sides, r)
+        cos_lut = precomputed_cos_lut(num_sides, r)
+
+        points = np.array([
+            (int(offset_x + cos_lut[i]), int(offset_y + sin_lut[i]))
+            for i in range(num_sides)
+        ], np.int32)
+
+        cv2.polylines(canvas, [points], isClosed=True, color=shape_color, thickness=4)
+    elif shape == "hexagon":
+        num_sides = 6
+        side = int((min(size) // 3) * scale)
+        r = side
+
+        offset_x = random.randint(r + buffer, max_x - r)
+        offset_y = random.randint(r + buffer, max_y - r)
+
+        sin_lut = precomputed_sin_lut(num_sides, r)
+        cos_lut = precomputed_cos_lut(num_sides, r)
+
+        points = np.array([
+            (int(offset_x + cos_lut[i]), int(offset_y + sin_lut[i]))
+            for i in range(num_sides)
+        ], np.int32)
+
+        cv2.polylines(canvas, [points], isClosed=True, color=shape_color, thickness=4)
+    elif shape == "star-1":
+        outer_radius = int((min(size) // 3) * scale)
+        inner_radius = int(outer_radius * 0.4)
+
+        offset_x = random.randint(outer_radius + buffer, max_x - outer_radius)
+        offset_y = random.randint(outer_radius + buffer, max_y - outer_radius)
+
+        sin_outer = precomputed_sin_lut(10, outer_radius)
+        cos_outer = precomputed_cos_lut(10, outer_radius)
+        sin_inner = precomputed_sin_lut(10, inner_radius)
+        cos_inner = precomputed_cos_lut(10, inner_radius)
+
+        points = []
+        for i in range(10):
+            if i % 2 == 0:
+                x = int(offset_x + cos_outer[i])
+                y = int(offset_y + sin_outer[i])
+            else:
+                x = int(offset_x + cos_inner[i])
+                y = int(offset_y + sin_inner[i])
+
+            points.append((x, y))
+
+        points = np.array(points, np.int32)
+        cv2.polylines(canvas, [points], isClosed=True, color=shape_color, thickness=4)
+
+    elif shape == "star-2":
+        outer_radius = int((min(size) // 3) * scale)
+        inner_radius = int(outer_radius * 0.5)
+
+        offset_x = random.randint(outer_radius + buffer, max_x - outer_radius)
+        offset_y = random.randint(outer_radius + buffer, max_y - outer_radius)
+
+        sin_outer = precomputed_sin_lut(5, outer_radius)
+        cos_outer = precomputed_cos_lut(5, outer_radius)
+        sin_inner = precomputed_sin_lut(5, inner_radius)
+        cos_inner = precomputed_cos_lut(5, inner_radius)
+
+        points = []
+        for i in range(5):
+            points.append((
+                int(offset_x + cos_outer[i]),
+                int(offset_y + sin_outer[i])
+            ))
+            points.append((
+                int(offset_x + cos_inner[i] * np.cos(np.pi / 5)),
+                int(offset_y + sin_inner[i] * np.cos(np.pi / 5))
+            ))
+
+        points = np.array(points, np.int32)
+
+        for i in range(0, 10, 2):
+            cv2.line(canvas, tuple(points[i]), tuple(points[(i + 4) % 10]), color=shape_color, thickness=2)
+
 
     rotated_canvas = rotate_image(canvas, angle, bg_color)
     skewed_canvas = skew_image(rotated_canvas, bg_color)
@@ -144,8 +238,16 @@ def generate_shape_image(shape, size=(400, 400)):
 
 def save_images(num_images=10, output_folder="shapes"):
     os.makedirs(output_folder, exist_ok=True)
-    shapes = ["circle", "square", "triangle"]
-    shape_counts = {"circle": 0, "square": 0, "triangle": 0}
+    shapes = ["circle", "square", "triangle", "pentagon", "hexagon", "star-1", "star-2"]
+    shape_counts = {
+        "circle": 0,
+        "square": 0,
+        "triangle": 0,
+        "pentagon": 0,
+        "hexagon": 0,
+        "star-1": 0,
+        "star-2": 0,
+    }
 
     for shape in shapes:
         os.makedirs(os.path.join(output_folder, shape), exist_ok=True)

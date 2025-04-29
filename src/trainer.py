@@ -14,7 +14,15 @@ def load_data(image_folder, image_size=(128, 128)):
     progress_hun = 0
     images = []
     labels = []
-    shape_labels = {"circle": 0, "square": 1, "triangle": 2}
+    shape_labels = {
+        "circle": 0,
+        "square": 1,
+        "triangle": 2,
+        "pentagon": 3,
+        "hexagon": 4,
+        "star-1": 5,
+        "star-2": 6,
+    }
 
     for shape in shape_labels.keys():
         shape_folder = os.path.join(image_folder, shape)
@@ -38,7 +46,7 @@ def load_data(image_folder, image_size=(128, 128)):
 
     images = np.expand_dims(images, axis=-1)
 
-    labels = to_categorical(labels, num_classes=3)
+    labels = to_categorical(labels, num_classes=7)
 
     return images, labels
 
@@ -59,7 +67,7 @@ model = Sequential([
     MaxPooling2D((2, 2)),
     Flatten(),
     Dense(256, activation="relu"),
-    Dense(3, activation="softmax"),
+    Dense(7, activation="softmax"),
 ])
 
 model.compile(
@@ -73,7 +81,7 @@ early_stop = EarlyStopping(
 )
 
 checkpoint = ModelCheckpoint(
-    "shape_recognition_model.keras",
+    "./dist/shape_sorter.keras",
     monitor="val_accuracy",
     save_best_only=True,
     mode="max",
@@ -84,7 +92,7 @@ model.fit(
     x_train,
     y_train,
     validation_data=(x_val, y_val),
-    epochs=12,
+    epochs=14,
     batch_size=32,
     callbacks=[early_stop, checkpoint],
 )
